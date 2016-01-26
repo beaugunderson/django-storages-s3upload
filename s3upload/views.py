@@ -45,10 +45,6 @@ class S3UploadFormView(generic.edit.FormMixin,
 
     form_class = S3UploadForm
 
-    process_to = None  # e.g. 'foo/bar/'
-
-    processed_key_generator = None
-
     set_content_type = settings.SET_CONTENT_TYPE
 
     storage = default_storage
@@ -109,12 +105,6 @@ class S3UploadFormView(generic.edit.FormMixin,
 
         return form_kwargs
 
-    def get_process_to(self):
-        return self.process_to
-
-    def get_processed_key_generator(self):
-        return self.processed_key_generator
-
     def get_storage(self):
         return self.storage
 
@@ -160,8 +150,6 @@ class S3UploadFormView(generic.edit.FormMixin,
             'storage': self.get_storage(),
             'upload_to': self.get_upload_to(),
             'content_type_prefix': self.get_content_type_prefix(),
-            'process_to': self.get_process_to(),
-            'processed_key_generator': self.get_processed_key_generator(),
             # ``data`` may be provided by a POST from the JavaScript if using a
             # DropZone form, or as querystrings on a redirect GET request from
             # Amazon if not.
