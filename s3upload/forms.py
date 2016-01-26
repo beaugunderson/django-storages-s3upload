@@ -37,6 +37,7 @@ class ContentTypePrefixMixin(object):
     def __init__(self, content_type_prefix=None, **kwargs):
         if content_type_prefix is not None:
             self.content_type_prefix = content_type_prefix
+
         return super(ContentTypePrefixMixin, self).__init__(**kwargs)
 
     def get_content_type_prefix(self):
@@ -50,6 +51,7 @@ class KeyPrefixMixin(object):
     def __init__(self, upload_to=None, **kwargs):
         if upload_to is not None:
             self.upload_to = upload_to
+
         return super(KeyPrefixMixin, self).__init__(**kwargs)
 
     def get_key_prefix(self):
@@ -62,6 +64,7 @@ class StorageMixin(object):
 
     def __init__(self, storage=None, **kwargs):
         self.storage = storage if storage is not None else default_storage
+
         return super(StorageMixin, self).__init__(**kwargs)
 
     def get_bucket_name(self):
@@ -109,7 +112,9 @@ class S3UploadForm(ContentTypePrefixMixin, KeyPrefixMixin, StorageMixin,
 
     def __init__(self, success_action_redirect=None, **kwargs):
         self._success_action_redirect = success_action_redirect
+
         super(S3UploadForm, self).__init__(**kwargs)
+
         self.fields['access_key'].initial = self.get_access_key()
         self.fields['acl'].initial = self.get_acl()
         self.fields['key'].initial = self.get_key()
@@ -147,13 +152,12 @@ class S3UploadForm(ContentTypePrefixMixin, KeyPrefixMixin, StorageMixin,
         return self.get_storage().access_key
 
     def get_acl(self):
-        """Return the acl to be set on the uploaded file.
+        """
+        Return the acl to be set on the uploaded file.
 
         By default this sets a 'private' acl, and should probably be kept that
         way. You can set the final acl when the upload is validated/processed.
-
         """
-
         return 'private'
 
     def get_action(self):
@@ -206,7 +210,9 @@ class S3UploadForm(ContentTypePrefixMixin, KeyPrefixMixin, StorageMixin,
     def get_expiration_time(self, refresh=False):
         if not hasattr(self, '_expiration_time') and not refresh:
             expiration_datetime = datetime.utcnow() + self.expiration_timedelta
+
             self._expiration_time = expiration_datetime.timetuple()
+
         return self._expiration_time
 
     def get_key(self):
@@ -237,7 +243,9 @@ class S3UploadForm(ContentTypePrefixMixin, KeyPrefixMixin, StorageMixin,
 
 
 class DropzoneS3UploadForm(S3UploadForm):
-    """Form for uploading a file directly to an S3 bucket using dropzone.js."""
+    """
+    Form for uploading a file directly to an S3 bucket using dropzone.js.
+    """
 
     success_action_status_code = 201
 
@@ -248,36 +256,38 @@ class DropzoneS3UploadForm(S3UploadForm):
 
 class ValidateS3UploadForm(ContentTypePrefixMixin, KeyPrefixMixin,
                            StorageMixin, forms.Form):
-    """Form used to validate returned data from S3.
+    """
+    Form used to validate returned data from S3.
 
     Not for use in templates - we're only processing/validating the provided
     data.
-
     """
 
+    # Name of the S3 bucket
     bucket_name = forms.CharField(widget=forms.HiddenInput())
-    """Name of the S3 bucket."""
 
+    # Etag of the uploaded file
     etag = forms.CharField(widget=forms.HiddenInput())
-    """Etag of the uploaded file."""
 
+    # Key name (path) of the uploaded file
     key_name = forms.CharField(widget=forms.HiddenInput())
-    """Key name (path) of the uploaded file."""
 
+    # Path to place processed files in
     process_to = 'processed/'  # e.g. 'foo/bar/'
-    """Path to place processed files in."""
 
     def __init__(self, process_to=None, processed_key_generator=None,
                  **kwargs):
         if process_to is not None:
             self.process_to = process_to
+
         if processed_key_generator is not None:
             self._generate_processed_key_name = processed_key_generator
+
         return super(ValidateS3UploadForm, self).__init__(**kwargs)
 
     @staticmethod
     def _generate_processed_key_name(process_to, upload_name):
-        """Returns a key name to use after processing based on timestamp and
+        """Return a key name to use after processing based on timestamp and
         upload key name."""
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S%f')
         name, extension = os.path.splitext(upload_name)
@@ -287,64 +297,86 @@ class ValidateS3UploadForm(ContentTypePrefixMixin, KeyPrefixMixin,
     def clean(self):
         if self.cleaned_data.get('key_name') and self.cleaned_data.get('etag'):
             key = self.get_upload_key()
+
             # Ensure key and etag match
             if not key.etag == self.cleaned_data['etag']:
                 raise forms.ValidationError('Etag does not validate.')
+
             # Ensure initial content type starts with prefix
             if not key.content_type.startswith(self.get_content_type_prefix()):
                 raise forms.ValidationError('Content-Type does not validate.')
+
             # Ensure actual content type starts with prefix
             content_type = self.get_upload_content_type()
+
             if not content_type.startswith(self.get_content_type_prefix()):
                 raise forms.ValidationError('Content-Type does not validate.')
+
         return self.cleaned_data
 
     def clean_bucket_name(self):
-        """Validates that the bucket name in the provided data matches the
-        bucket name from the storage backend."""
+        """
+        Validate that the bucket name in the provided data matches the bucket
+        name from the storage backend.
+        """
+
         bucket_name = self.cleaned_data['bucket_name']
+
         if not bucket_name == self.get_bucket_name():
             raise forms.ValidationError('Bucket name does not validate.')
+
         return bucket_name
 
     def clean_key_name(self):
-        """Validates that the key in the provided data starts with the
-        required prefix, and that it exists in the bucket."""
+        """
+        Validate that the key in the provided data starts with the required
+        prefix, and that it exists in the bucket.
+        """
         key = self.cleaned_data['key_name']
+
         # Ensure key starts with prefix
         if not key.startswith(self.get_key_prefix()):
             raise forms.ValidationError('Key does not have required prefix.')
+
         # Ensure key exists
         if not self.get_upload_key():
             raise forms.ValidationError('Key does not exist.')
+
         return key
 
     def get_processed_acl(self):
-        """Return the acl to be set on the processed file."""
+        """
+        Return the acl to be set on the processed file.
+        """
         return self.get_storage().default_acl
 
     def get_processed_key_name(self):
-        """Return the full path to use for the processed file."""
+        """
+        Return the full path to use for the processed file.
+        """
         if not hasattr(self, '_processed_key_name'):
             path, upload_name = os.path.split(self.get_upload_key().name)
+
             key_name = self._generate_processed_key_name(
                 self.process_to, upload_name)
+
             self._processed_key_name = os.path.join(
                 self.get_storage().location, key_name)
+
         return self._processed_key_name
 
     def get_processed_path(self):
-        """Returns the processed file path from the storage backend.
-
-        :returns: File path from the storage backend.
-        :rtype: :py:class:`unicode`
-
+        """
+        Return the processed file path from the storage backend.
         """
         location = self.get_storage().location
+
         return self.get_processed_key_name()[len(location):]
 
     def process_upload(self, set_content_type=True):
-        """Process the uploaded file."""
+        """
+        Process the uploaded file.
+        """
         metadata = self.get_upload_key_metadata()
 
         if set_content_type:
@@ -352,37 +384,45 @@ class ValidateS3UploadForm(ContentTypePrefixMixin, KeyPrefixMixin,
             metadata.update({b'Content-Type': b'{0}'.format(content_type)})
 
         upload_key = self.get_upload_key()
+
         processed_key_name = self.get_processed_key_name()
         processed_key = upload_key.copy(upload_key.bucket.name,
                                         processed_key_name, metadata)
         processed_key.set_acl(self.get_processed_acl())
+
         upload_key.delete()
+
         return processed_key
+
     process_upload.alters_data = True
 
     def get_upload_content_type(self):
-        """Determine the actual content type of the upload."""
+        """
+        Determine the actual content type of the upload.
+        """
         if not hasattr(self, '_upload_content_type'):
             with self.get_storage().open(self.get_upload_path()) as upload:
                 content_type = Magic(mime=True).from_buffer(upload.read(1024))
+
             self._upload_content_type = content_type
+
         return self._upload_content_type
 
     def get_upload_key(self):
-        """Get the `Key` from the S3 bucket for the uploaded file.
-
-        :returns: Key (object) of the uploaded file.
-        :rtype: :py:class:`boto.s3.key.Key`
-
+        """
+        Get the `Key` from the S3 bucket for the uploaded file.
         """
 
         if not hasattr(self, '_upload_key'):
             self._upload_key = self.get_storage().bucket.get_key(
                 self.cleaned_data['key_name'])
+
         return self._upload_key
 
     def get_upload_key_metadata(self):
-        """Generate metadata dictionary from a bucket key."""
+        """
+        Generate metadata dictionary from a bucket key.
+        """
         key = self.get_upload_key()
         metadata = key.metadata.copy()
 
@@ -404,11 +444,125 @@ class ValidateS3UploadForm(ContentTypePrefixMixin, KeyPrefixMixin,
         return metadata
 
     def get_upload_path(self):
-        """Returns the uploaded file path from the storage backend.
-
-        :returns: File path from the storage backend.
-        :rtype: :py:class:`unicode`
-
+        """
+        Return the uploaded file path from the storage backend.
         """
         location = self.get_storage().location
+
+        return self.cleaned_data['key_name'][len(location):]
+
+
+class SimpleValidateS3UploadForm(ContentTypePrefixMixin, KeyPrefixMixin,
+                                 StorageMixin, forms.Form):
+    """
+    Form used to validate returned data from S3.
+
+    Not for use in templates - we're only processing/validating the provided
+    data.
+    """
+
+    # Name of the S3 bucket
+    bucket_name = forms.CharField(widget=forms.HiddenInput())
+
+    # Etag of the uploaded file
+    etag = forms.CharField(widget=forms.HiddenInput())
+
+    # Key name (path) of the uploaded file
+    key_name = forms.CharField(widget=forms.HiddenInput())
+
+    def __init__(self, **kwargs):
+        super(SimpleValidateS3UploadForm, self).__init__(**kwargs)
+
+    def clean(self):
+        if self.cleaned_data.get('key_name') and self.cleaned_data.get('etag'):
+            key = self.get_upload_key()
+
+            # Ensure key and etag match
+            if not key.etag == self.cleaned_data['etag']:
+                raise forms.ValidationError('Etag does not validate.')
+
+            # Ensure initial content type starts with prefix
+            if not key.content_type.startswith(self.get_content_type_prefix()):
+                raise forms.ValidationError('Content-Type does not validate.')
+
+            # Ensure actual content type starts with prefix
+            content_type = self.get_upload_content_type()
+
+            if not content_type.startswith(self.get_content_type_prefix()):
+                raise forms.ValidationError('Content-Type does not validate.')
+
+        return self.cleaned_data
+
+    def clean_bucket_name(self):
+        """
+        Validate that the bucket name in the provided data matches the bucket
+        name from the storage backend.
+        """
+
+        bucket_name = self.cleaned_data['bucket_name']
+
+        if not bucket_name == self.get_bucket_name():
+            raise forms.ValidationError('Bucket name does not validate.')
+
+        return bucket_name
+
+    def clean_key_name(self):
+        """
+        Validate that the key in the provided data starts with the required
+        prefix, and that it exists in the bucket.
+        """
+        key = self.cleaned_data['key_name']
+
+        # Ensure key starts with prefix
+        if not key.startswith(self.get_key_prefix()):
+            raise forms.ValidationError('Key does not have required prefix.')
+
+        # Ensure key exists
+        if not self.get_upload_key():
+            raise forms.ValidationError('Key does not exist.')
+
+        return key
+
+    def get_upload_key(self):
+        """
+        Get the `Key` from the S3 bucket for the uploaded file.
+        """
+        if not hasattr(self, '_upload_key'):
+            self._upload_key = self.get_storage().bucket.get_key(
+                self.cleaned_data['key_name'])
+
+        return self._upload_key
+
+    def get_upload_key_metadata(self):
+        """
+        Generate metadata dictionary from a bucket key.
+        """
+        key = self.get_upload_key()
+        metadata = key.metadata.copy()
+
+        # Some http header properties which are stored on the key need to be
+        # copied to the metadata when updating
+        headers = {
+            # http header name, key attribute name
+            'Cache-Control': 'cache_control',
+            'Content-Type': 'content_type',
+            'Content-Disposition': 'content_disposition',
+            'Content-Encoding': 'content_encoding',
+        }
+
+        for header_name, attribute_name in headers.items():
+            attribute_value = getattr(key, attribute_name, False)
+
+            if attribute_value:
+                metadata.update({b'{0}'.format(header_name):
+                                 b'{0}'.format(attribute_value)})
+
+        return metadata
+
+    def get_upload_path(self):
+        """
+        Return the uploaded file path from the storage backend.
+        """
+        location = self.get_storage().location
+
         return self.cleaned_data['key_name'][len(location):]
