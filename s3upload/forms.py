@@ -15,6 +15,10 @@
 # limitations under the License.
 
 
+import hmac
+import os
+import re
+
 from __future__ import absolute_import, unicode_literals
 from . import settings
 from datetime import datetime
@@ -22,8 +26,6 @@ from django import forms
 from django.core.files.storage import default_storage
 from hashlib import md5, sha1
 from magic import Magic
-import hmac
-import os
 
 
 class ContentTypePrefixMixin(object):
@@ -154,7 +156,9 @@ class S3UploadForm(ContentTypePrefixMixin, KeyPrefixMixin, StorageMixin,
 
     def get_action(self):
         url = self.get_storage().url('')
+
         location = self.get_storage().location
+
         if location and url.endswith(location):
             url = url[:-len(location)]
 
