@@ -157,6 +157,10 @@ class S3UploadForm(ContentTypePrefixMixin, KeyPrefixMixin, StorageMixin,
         location = self.get_storage().location
         if location and url.endswith(location):
             url = url[:-len(location)]
+
+        # if a private Storage is used the URL will contain query parameters
+        url = re.sub(r'\?.*$', '', url)
+
         return url
 
     def get_cache_control(self):
