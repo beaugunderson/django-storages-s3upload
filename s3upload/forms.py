@@ -557,3 +557,11 @@ class SimpleValidateS3UploadForm(ContentTypePrefixMixin, KeyPrefixMixin,
         location = self.get_storage().location
 
         return self.cleaned_data['key_name'][len(location):]
+
+    def process_upload(self, **kwargs):
+        """
+        Process the uploaded file.
+        """
+        upload_key = self.get_upload_key()
+
+        return upload_key
