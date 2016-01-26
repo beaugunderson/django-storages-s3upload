@@ -319,7 +319,6 @@ class ValidateS3UploadForm(ContentTypePrefixMixin, KeyPrefixMixin,
         Validate that the bucket name in the provided data matches the bucket
         name from the storage backend.
         """
-
         bucket_name = self.cleaned_data['bucket_name']
 
         if not bucket_name == self.get_bucket_name():
@@ -474,22 +473,14 @@ class SimpleValidateS3UploadForm(ContentTypePrefixMixin, KeyPrefixMixin,
         super(SimpleValidateS3UploadForm, self).__init__(**kwargs)
 
     def clean(self):
-        if self.cleaned_data.get('key_name') and self.cleaned_data.get('etag'):
+        etag = self.cleaned_data.get('etag')
+        key_name = self.cleaned_data.get('key_name')
+
+        if etag and key_name:
             key = self.get_upload_key()
 
-            # Ensure key and etag match
-            if not key.etag == self.cleaned_data['etag']:
+            if not key.etag == etag:
                 raise forms.ValidationError('Etag does not validate.')
-
-            # Ensure initial content type starts with prefix
-            if not key.content_type.startswith(self.get_content_type_prefix()):
-                raise forms.ValidationError('Content-Type does not validate.')
-
-            # Ensure actual content type starts with prefix
-            content_type = self.get_upload_content_type()
-
-            if not content_type.startswith(self.get_content_type_prefix()):
-                raise forms.ValidationError('Content-Type does not validate.')
 
         return self.cleaned_data
 
