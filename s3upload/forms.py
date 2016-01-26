@@ -14,18 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import absolute_import, unicode_literals
 
 import hmac
 import os
 import re
 
-from __future__ import absolute_import, unicode_literals
-from . import settings
 from datetime import datetime
+from hashlib import md5, sha1
+
 from django import forms
 from django.core.files.storage import default_storage
-from hashlib import md5, sha1
 from magic import Magic
+
+from . import settings
 
 
 class ContentTypePrefixMixin(object):
