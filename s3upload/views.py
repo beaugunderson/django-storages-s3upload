@@ -32,7 +32,9 @@ from django.utils.decorators import method_decorator
 from django.views import generic
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 
-from .forms import DropzoneS3UploadForm, S3UploadForm, ValidateS3UploadForm
+from .forms import (DropzoneS3UploadForm, S3UploadForm,
+                    SimpleValidateS3UploadForm)
+
 from . import settings
 
 
