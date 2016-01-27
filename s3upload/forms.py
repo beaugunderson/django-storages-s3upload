@@ -104,9 +104,11 @@ class S3UploadForm(ContentTypePrefixMixin, KeyPrefixMixin, StorageMixin,
 
     expiration_timedelta = settings.EXPIRATION_TIMEDELTA
 
-    field_name_overrides = {'cache_control': 'Cache-Control',
-                            'content_type': 'Content-Type',
-                            'access_key': 'AWSAccessKeyId'}
+    field_name_overrides = {
+        'cache_control': 'Cache-Control',
+        'content_type': 'Content-Type',
+        'access_key': 'AWSAccessKeyId'
+    }
 
     success_action_status_code = 204
 
@@ -146,6 +148,7 @@ class S3UploadForm(ContentTypePrefixMixin, KeyPrefixMixin, StorageMixin,
         # names of certain fields which require non-pythonic names.
         # http://stackoverflow.com/questions/8801910/override-django-form-fields-name-attr
         field_name = self.field_name_overrides.get(field_name, field_name)
+
         return super(S3UploadForm, self).add_prefix(field_name)
 
     def get_access_key(self):
@@ -504,9 +507,10 @@ class SimpleValidateS3UploadForm(ContentTypePrefixMixin, KeyPrefixMixin,
         """
         key = self.cleaned_data['key_name']
 
-        # Ensure key starts with prefix
-        if not key.startswith(self.get_key_prefix()):
-            raise forms.ValidationError('Key does not have required prefix.')
+        # TODO: add this back in using a path suffix or regex implementation
+        # # Ensure key matches prefix
+        # if not re.match(self.get_key_prefix_match(), key):
+        #     raise forms.ValidationError('Key does not match required prefix.')
 
         # Ensure key exists
         if not self.get_upload_key():
@@ -562,6 +566,4 @@ class SimpleValidateS3UploadForm(ContentTypePrefixMixin, KeyPrefixMixin,
         """
         Process the uploaded file.
         """
-        upload_key = self.get_upload_key()
-
-        return upload_key
+        return self.get_upload_key()
