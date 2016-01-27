@@ -46,11 +46,15 @@ class ContentTypePrefixMixin(object):
 
 class KeyPrefixMixin(object):
 
-    upload_to = 'incoming/'  # e.g. 'foo/bar/'
+    upload_to = 'incoming/'
+    upload_to_validator = '^incoming/'
 
-    def __init__(self, upload_to=None, **kwargs):
+    def __init__(self, upload_to=None, upload_to_validator=None, **kwargs):
         if upload_to is not None:
             self.upload_to = upload_to
+
+        if upload_to_validator is not None:
+            self.upload_to_validator = upload_to_validator
 
         return super(KeyPrefixMixin, self).__init__(**kwargs)
 
@@ -507,10 +511,9 @@ class SimpleValidateS3UploadForm(ContentTypePrefixMixin, KeyPrefixMixin,
         """
         key = self.cleaned_data['key_name']
 
-        # TODO: add this back in using a path suffix or regex implementation
-        # # Ensure key matches prefix
-        # if not re.match(self.get_key_prefix_match(), key):
-        #     raise forms.ValidationError('Key does not match required prefix.')
+        # Ensure key validates
+        if not re.match(self.upload_to_validator, key):
+            raise forms.ValidationError('Key does not validate.')
 
         # Ensure key exists
         if not self.get_upload_key():

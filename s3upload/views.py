@@ -93,6 +93,9 @@ class S3UploadFormView(generic.edit.FormMixin,
     def get_upload_to(self):
         return self.upload_to
 
+    def get_upload_to_validator(self):
+        return '^{}'.format(self.get_upload_to())
+
     def get_form_kwargs(self, *args, **kwargs):
         form_kwargs = super(S3UploadFormView, self).get_form_kwargs(*args,
                                                                     **kwargs)
@@ -149,6 +152,7 @@ class S3UploadFormView(generic.edit.FormMixin,
         return {
             'storage': self.get_storage(),
             'upload_to': self.get_upload_to(),
+            'upload_to_validator': self.get_upload_to_validator(),
             'content_type_prefix': self.get_content_type_prefix(),
             # ``data`` may be provided by a POST from the JavaScript if using a
             # DropZone form, or as querystrings on a redirect GET request from
