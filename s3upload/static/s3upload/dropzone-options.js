@@ -58,6 +58,10 @@ function pingServer(file) {
 }
 
 function dropzoneInit() {
+  var redirect = document.getElementById('id_success_action_redirect');
+
+  redirect.parentNode.removeChild(redirect);
+
   this.on('success', function (file) {
     pingServer(file);
   });

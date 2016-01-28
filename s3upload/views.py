@@ -187,6 +187,3 @@ class DropzoneS3UploadFormView(S3UploadFormView):
     form_class = DropzoneS3UploadForm
 
     template_name = 's3upload/dropzone_form.html'
-
-    def get_success_action_redirect(self):
-        return None
