@@ -36,21 +36,36 @@ function pingServer(file) {
     alert('Connection error');
   };
 
-  formData.append('bucket', s3Response.getElementsByTagName('Bucket')[0].textContent);
-  formData.append('key', s3Response.getElementsByTagName('Key')[0].textContent);
-  formData.append('etag', s3Response.getElementsByTagName('ETag')[0].textContent);
+  function byTagName(tagName) {
+    return s3Response.getElementsByTagName(tagName)[0].textContent;
+  }
+
+  formData.append('bucket', byTagName('Bucket'));
+  formData.append('key', byTagName('Key'));
+  formData.append('etag', byTagName('ETag'));
 
   request.send(formData);
 }
 
-Dropzone.options.s3upload = {
-  dictDefaultMessage: 'Drop files here or click to upload.',
+if (typeof dropzoneOptions === 'undefined') {
+  var dropzoneOptions = {};
+}
 
-  parallelUploads: 5,
+function dropzoneInit() {
+  this.on('success', function (file) {
+    pingServer(file);
+  });
 
-  init: function () {
-    this.on('success', function (file) {
-      pingServer(file);
-    });
+  if (typeof dropzoneOptions.customInit === 'function') {
+    dropzoneOptions.customInit.apply(this);
   }
-};
+}
+
+dropzoneOptions.dictDefaultMessage =
+  dropzoneOptions.dictDefaultMessage || 'Drop files here or click to upload.';
+
+dropzoneOptions.parallelUploads = dropzoneOptions.parallelUploads || 5;
+
+dropzoneOptions.init = dropzoneOptions.init || dropzoneInit;
+
+Dropzone.options.s3upload = dropzoneOptions;
