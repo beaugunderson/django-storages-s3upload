@@ -2,6 +2,10 @@
 
 'use strict';
 
+if (typeof dropzoneOptions === 'undefined') {
+  var dropzoneOptions = {};
+}
+
 // Ping our server with the data returned by the S3 repsonse
 function pingServer(file) {
   // Although the file has been sucessfully uploaded, don't show the success
@@ -22,13 +26,19 @@ function pingServer(file) {
     if (this.status >= 200 && this.status < 400) {
       // Re-apply success styling
       file.previewElement.classList.add('dz-success');
-    } else {
-      // We reached our target server, but it returned an error.
-      file.status = Dropzone.ERROR;
 
-      Dropzone.forElement('#s3upload')
-        .emit('error', file, request.responseText);
+      if (typeof dropzoneOptions.customSuccess === 'function') {
+        dropzoneOptions.customSuccess.apply(this);
+      }
+
+      return;
     }
+
+    // We reached our target server, but it returned an error.
+    file.status = Dropzone.ERROR;
+
+    Dropzone.forElement('#s3upload')
+      .emit('error', file, request.responseText);
   };
 
   request.onerror = function () {
@@ -45,10 +55,6 @@ function pingServer(file) {
   formData.append('etag', byTagName('ETag'));
 
   request.send(formData);
-}
-
-if (typeof dropzoneOptions === 'undefined') {
-  var dropzoneOptions = {};
 }
 
 function dropzoneInit() {
